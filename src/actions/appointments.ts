@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import { appointmentSchema, type AppointmentInput } from "@/lib/validations";
 import { getAvailableSlots } from "@/lib/availability";
 import { revalidatePath } from "next/cache";
+import {
+  sendNewAppointmentEmail,
+  sendStatusChangeEmail,
+} from "@/lib/email";
 
 export async function createAppointment(data: AppointmentInput) {
   const parsed = appointmentSchema.safeParse(data);
@@ -39,6 +43,9 @@ export async function createAppointment(data: AppointmentInput) {
   revalidatePath("/admin");
   revalidatePath("/admin/turnos");
 
+  // Send email notification (fire-and-forget to avoid blocking)
+  sendNewAppointmentEmail(appointment.id).catch(console.error);
+
   return { id: appointment.id };
 }
 
@@ -61,6 +68,9 @@ export async function updateAppointmentStatus(
   revalidatePath("/admin");
   revalidatePath("/admin/turnos");
   revalidatePath(`/turno/${id}`);
+
+  // Send status change email notification (fire-and-forget to avoid blocking)
+  sendStatusChangeEmail(id).catch(console.error);
 
   return appointment;
 }
