@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  durationMin  Int           @default(60)
+  active       Boolean       @default(true)
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+}
+
+model Schedule {
+  id        String  @id @default(cuid())
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  maxSlots  Int     @default(4)
+  active    Boolean @default(true)
+}
+
+model ScheduleException {
+  id        String   @id @default(cuid())
+  date      DateTime
+  available Boolean  @default(false)
+  reason    String?
+}
+
+model Settings {
+  id          String  @id @default("default")
+  autoConfirm Boolean @default(false)
+  shopName    String  @default("Robertito Il Vecchio")
+  shopEmail   String  @default("")
+  shopPhone   String  @default("")
+}
+
+model Appointment {
+  id           String            @id @default(cuid())
+  date         DateTime
+  timeSlot     String
+  status       AppointmentStatus @default(PENDING)
+  clientName   String
+  clientPhone  String
+  clientEmail  String
+  vehicleBrand String
+  vehicleModel String
+  description  String?
+  serviceId    String
+  service      Service           @relation(fields: [serviceId], references: [id])
+  createdBy    CreatedBy         @default(CLIENT)
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+enum Role {
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum CreatedBy {
+  CLIENT
+  ADMIN
+}
