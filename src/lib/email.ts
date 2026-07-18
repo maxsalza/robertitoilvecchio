@@ -3,7 +3,9 @@ import { db } from "./db";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente de confirmación",
@@ -20,7 +22,7 @@ export async function sendNewAppointmentEmail(appointmentId: string) {
     include: { service: true },
   });
 
-  if (!appointment) return;
+  if (!appointment || !resend) return;
 
   const settings = await db.settings.findUnique({ where: { id: "default" } });
   const dateStr = format(appointment.date, "EEEE d 'de' MMMM, yyyy", {
@@ -74,7 +76,7 @@ export async function sendStatusChangeEmail(appointmentId: string) {
     include: { service: true },
   });
 
-  if (!appointment || !appointment.clientEmail) return;
+  if (!appointment || !appointment.clientEmail || !resend) return;
 
   const dateStr = format(appointment.date, "EEEE d 'de' MMMM, yyyy", {
     locale: es,
